@@ -23,9 +23,9 @@ const Home = () => {
 
     <div className='cardWrapper'>
 
-      <Card title="Welcome to JKLU Radio!" icon="wave_emoji">
+      <Card title="Welcome to InternetRadio!" icon="wave_emoji">
 
-      <p className={styles.text}>We’re working to make a community where we can discuss about anything:)</p>
+      <p className={styles.text}>Join our community for live audio conversations and connect with people worldwide :)</p>
 
       <div>
         <Button onClick={startRegister} btntext="Let's Go" />

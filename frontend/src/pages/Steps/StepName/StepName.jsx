@@ -40,7 +40,7 @@ const StepName = ({ onNext }) => {
         <div>
           <div>
             <p className={styles.paragraph}>
-              People use real names at JKLU Radio :) !
+              Use your real name to build trust in our community :)
             </p>
           </div>
           <div>

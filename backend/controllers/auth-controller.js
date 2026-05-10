@@ -29,25 +29,41 @@ class AuthController {
         const data = `${phoneEmail}.${otp}.${expires}`;
         const hash = hashService.hashOtp(data);
 
+        // Log OTP for debugging/testing
+        console.log(`📧 OTP requested for: ${phoneEmail}`);
+        console.log(`🔐 Generated OTP: ${otp}`);
+
         try{
             if (email){
-                await otpService.sendByMail(email, otp);
+                const emailSent = await otpService.sendByMail(email, otp);
+                if (emailSent) {
+                    console.log(`✅ OTP sent successfully to ${email}`);
+                } else {
+                    console.log(`⚠️  Email failed but OTP logged for: ${email}`);
+                }
             }else {
                 // await otpService.sendBySms(phone, otp);
             }
 
-            return res.status(200).json({
+            const response = {
                 hash: `${hash}.${expires}`,
                 phone,
                 email,
-            })
+                message: 'OTP sent successfully! Check your email.'
+            };
+
+            // In development/testing, include OTP in response for easier testing
+            if (process.env.NODE_ENV === 'development') {
+                response.otp = otp; // For local testing
+                response.debug = true;
+            }
+
+            return res.status(200).json(response);
         }
         catch(err){
-            console.log(err);
+            console.error('❌ Error in sendOtp:', err);
             return res.status(500).json({message: 'Message sending failed'})
         }
-
-        // res.json({hash:hash});
     }
 
     async verifyOtp(req, res) {

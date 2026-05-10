@@ -35,7 +35,7 @@ const Navigation = () => {
     <nav className={`${styles.navbar} container`}>
       <Link style={brandStyle} to="/">
         <img style={logo} src="/images/wave_emoji.png" alt="Logo" />
-        <span>JKLU Radio</span>
+        <span>InternetRadio</span>
       </Link>
       {isAuth && user.activated && user && (
         <div className={styles.navRight}>
