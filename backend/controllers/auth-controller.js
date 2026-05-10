@@ -3,6 +3,7 @@ const hashService = require('../services/hash-service');
 const userService = require('../services/user-service');
 const tokenService = require('../services/token-service');
 const UserDto = require('../dtos/user-dto');
+const { validateEmail, validatePhone, validateOtp } = require('../util/validators');
 
 class AuthController {
     async sendOtp(req, res) {
@@ -11,6 +12,15 @@ class AuthController {
 
         if(!phoneEmail){
             return res.status(400).json({message: 'Phone no. or email is required!'})
+        }
+
+        // Validate email or phone format
+        if (email && !validateEmail(email)) {
+            return res.status(400).json({message: 'Invalid email format'})
+        }
+
+        if (phone && !validatePhone(phone)) {
+            return res.status(400).json({message: 'Invalid phone format'})
         }
 
         const otp = await otpService.generateOtp();     
@@ -45,19 +55,24 @@ class AuthController {
         const phoneEmail = phone || email;
 
         if(!otp || !hash || !phoneEmail){
-            res.status(400).json({message: "All fields are required!"});
+            return res.status(400).json({message: "All fields are required!"});
+        }
+
+        // Validate OTP format
+        if (!validateOtp(otp)) {
+            return res.status(400).json({message: "Invalid OTP format"});
         }
 
         const [hashedOtp, expires] = hash.split('.');
         if (Date.now() > +expires) {
-            res.status(400).json({message: 'OTP expired!'});
+            return res.status(400).json({message: 'OTP expired!'});
         }
 
         const data = `${phoneEmail}.${otp}.${expires}`;   
         const isValid = otpService.verifyOtp(hashedOtp, data);
         
         if(!isValid) {
-            res.status(400).json({message: "Invaild OTP"})
+            return res.status(400).json({message: "Invalid OTP"})
         }
 
         let user;
@@ -68,12 +83,35 @@ class AuthController {
                 user = await userService.createUser({email, phone});
             }
         } catch(err){
-            res.status(500).json({ message: 'Db Error'})
+            console.log(err);
+            return res.status(500).json({ message: 'Db Error'})
         }
 
-        const { accessToken, refreshToken } = tokenService.genrateTokens({_id: user._id, activated: false });
+        // Ensure user exists before proceeding
+        if (!user) {
+            return res.status(500).json({ message: 'Failed to create/find user'});
+        }
 
-        await tokenService.storeRefreshToken(refreshToken, user._id);
+        let accessToken, refreshToken;
+        try {
+            const tokens = tokenService.genrateTokens({_id: user._id, activated: user.activated});
+            accessToken = tokens.accessToken;
+            refreshToken = tokens.refreshToken;
+        } catch(err) {
+            console.log(err);
+            return res.status(500).json({ message: 'Token generation failed'});
+        }
+
+        if (!refreshToken) {
+            return res.status(500).json({ message: 'Failed to generate refresh token'});
+        }
+
+        try {
+            await tokenService.storeRefreshToken(refreshToken, user._id);
+        } catch(err) {
+            console.log(err);
+            return res.status(500).json({ message: 'Failed to store refresh token'});
+        }
 
         res.cookie('refreshToken', refreshToken, {
             maxAge: 1000 * 60 * 60 * 24 * 30,
@@ -86,7 +124,7 @@ class AuthController {
         });
 
         const userDto = new UserDto(user);
-        res.json({ user: userDto, auth: true });
+        return res.json({ user: userDto, auth: true });
 
     }
 
@@ -142,19 +180,29 @@ class AuthController {
 
         // response send 
         const userDto = new UserDto(user);
-        res.json({ user: userDto, auth: true });
+        return res.json({ user: userDto, auth: true });
 
     }
 
     async logout(req, res){
         const { refreshToken } = req.cookies;
 
+        if (!refreshToken) {
+            return res.status(400).json({message: 'No token to logout'});
+        }
+
         // delete refresh token from db
-        await tokenService.removeToken(refreshToken); 
+        try {
+            await tokenService.removeToken(refreshToken);
+        } catch(err) {
+            console.log(err);
+            return res.status(500).json({message: 'Logout failed'});
+        }
+
         // delete cookies
         res.clearCookie('refreshToken');
         res.clearCookie('accessToken');
-        res.json({user: null, auth: false})
+        return res.json({user: null, auth: false})
 
     }
 

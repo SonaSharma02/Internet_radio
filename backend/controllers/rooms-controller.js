@@ -42,10 +42,10 @@ class RoomsController {
       }
       await room.deleteOne();
 
-      res.json({ message: "Room deleted successfully" });
+      return res.json({ message: "Room deleted successfully" });
     } catch (error) {
       console.error("Error deleting room:", error);
-      res.status(500).json({ message: "Something went wrong" });
+      return res.status(500).json({ message: "Something went wrong" });
     }
   }
 }

@@ -22,7 +22,7 @@ export function useLoadingWithRefresh() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [dispatch]);
 
   return { loading };
 }

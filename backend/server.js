@@ -1,4 +1,7 @@
 require("dotenv").config();
+const validateEnv = require("./config/env-validator");
+validateEnv();
+
 const express = require("express");
 const router = require("./routes");
 const DbConnect = require("./db");
@@ -35,6 +38,8 @@ app.use(router);
 app.get("/", (req, res) => {
   res.send("hello from express js");
 });
+
+app.use(require("./middlewares/error-middleware"));
 
 // sockets
 

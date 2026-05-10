@@ -7,7 +7,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - C:\\Users\\sidha\\Documents\\Databases\\mongodb\\internetRadio:/data/db
+      - ./mongodb-data:/data/db
   backend:
     build:
       dockerfile: Dockerfile.dev

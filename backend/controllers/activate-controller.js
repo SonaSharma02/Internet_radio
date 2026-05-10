@@ -26,7 +26,7 @@ class ActivateController {
     }
 
     if (!name) {
-      res.status(400).json({ message: "All fields are required" });
+      return res.status(400).json({ message: "All fields are required" });
     }
     
     const userId = req.user._id;
@@ -35,16 +35,17 @@ class ActivateController {
       const user = await userService.findUser({ _id: userId });
 
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: "User not found" });
       }
 
       user.activated = true;
       user.name = name;
       user.avatar = imagePath;
-      user.save();
-      res.json({ user: new UserDto(user), auth: true });
+      await user.save();
+      return res.json({ user: new UserDto(user), auth: true });
     } catch (err) {
-      res.status(500).json({ message: "Something went wrong" });
+      console.log(err);
+      return res.status(500).json({ message: "Something went wrong" });
     }
   }
 }
